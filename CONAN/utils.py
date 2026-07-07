@@ -13,7 +13,6 @@ import spleaf
 from numba import vectorize
 
 
-
 def light_travel_time_correction(t,t0,aR,P,inc,Rstar,ecc=0,w=1.57079):
 	'''
 	Corrects the time array for light travel time effects i.e subtracts the light travel time at each time point
