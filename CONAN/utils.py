@@ -592,7 +592,7 @@ def outlier_clipping(x, y, yerr = None, clip=5, width=15, verbose=True, return_c
 	x_new, y_new, yerr_new: Each and array with the remaining points after clipping
 	
 	"""
-	if width % 2 !=0:
+	if width % 2 == 0:
 		width = width + 1
   
 	from scipy.signal import medfilt
