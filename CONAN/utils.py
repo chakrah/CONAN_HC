@@ -976,15 +976,112 @@ def aR_to_Tdur(aR, b, Rp, P,e=0,w=90, tra_occ="tra",total=True):
 	sini    = unp.sin(inc)
 	numer   = (1+rp)**2 - b**2
 	numer   = np.where(numer < 0,np.nan, numer) + 0
+	
+	# --- compute arcsin argument ---
+	arg = unp.sqrt(numer) / (aR * ecc_fac * sini)
+	# --- clip arcsin argument (as before) ---
+	arg_nom = np.clip(unp.nominal_values(arg), -1.0, 1.0)
+	arg_std = unp.std_devs(arg)
+	arg = unp.uarray(arg_nom, arg_std)
+	# --- also clip the sqrt(1-e**2) argument ---
+	one_minus_e2 = 1 - e**2
+	e2_nom = np.clip(unp.nominal_values(one_minus_e2), 1e-6, None)   # floor at 0
+	e2_std = unp.std_devs(one_minus_e2)
+	one_minus_e2 = unp.uarray(e2_nom, e2_std)
+	Tdur = P/np.pi * (ecc_fac**2/(unp.sqrt(one_minus_e2))) * unp.arcsin(arg)
 
 	
-	Tdur = P/np.pi * (ecc_fac**2/(unp.sqrt(1-e**2))) * unp.arcsin(unp.sqrt( numer )/(aR*ecc_fac*sini))
+	# Tdur = P/np.pi * (ecc_fac**2/(unp.sqrt(1-e**2))) * unp.arcsin(unp.sqrt( numer )/(aR*ecc_fac*sini))
 	Tdur = unp.uarray(np.round(unp.nominal_values(Tdur),8), np.round(unp.std_devs(Tdur),8))
 
 	if np.iterable(Tdur):
 		return unp.nominal_values(Tdur) if all(unp.std_devs(Tdur) == np.zeros_like(Tdur)) else Tdur
 	else:
 		return unp.nominal_values(Tdur).item() if unp.std_devs(Tdur) == 0 else Tdur
+
+# def aR_to_Tdur(aR, b, Rp, P,e=0,w=90, tra_occ="tra",total=True):
+# 	"""
+# 	convert scaled semi-major axis to transit duration in days 
+# 	using eqn 30 and 31 of Kipping 2010 https://doi.org/10.1111/j.1365-2966.2010.16894.x
+# 	it is a more precise modification of eq 14,16 of Winn2010 https://arxiv.org/pdf/1001.2010.pdf
+
+# 	Parameters
+# 	-----------
+# 	aR: float, ufloat, array-like;
+# 		The scaled semi-major axis of the planet.
+# 	b: float, ufloat, array-like;
+# 		The impact parameter.
+# 	Rp: float, ufloat, array-like;
+# 		planet-to-star radius ratio.
+# 	P: float, ufloat, array-like;
+# 		The period of the planet in days.
+# 	e: float, ufloat, array-like;
+# 		The eccentricity of the orbit.
+# 	w: float, ufloat, array-like;
+# 		The argument of periastron in degrees.
+# 	tra_occ: str;
+# 		select duration of transit (tra) or occultation (occ)
+# 	total: bool;
+# 		select total duration T14 (True) or full duration T23 (False)
+
+# 	Returns
+# 	--------
+# 	Tdur: array-like;
+# 		The transit duration in days (same unit as P).
+# 	"""
+# 	#return zeros if aR is zero
+# 	if isinstance(aR, AffineScalarFunc):
+# 		if aR.n==0: 
+# 			return 0
+# 	else:
+# 		if any(aR == np.zeros_like(aR if np.iterable(aR) else [aR])):
+# 			return np.zeros_like(aR) if np.iterable(aR) else 0
+
+# 	w      = unp.radians(w)
+# 	Rp     = abs(Rp)     #allow calculation for inverted transits
+# 	esinw  = e*unp.sin(w) if tra_occ=="tra" else -e*unp.sin(w)
+# 	rp     = Rp if total else -Rp
+
+# 	ecc_fac = (1-e**2)/(1+esinw)
+
+# 	# --- clip arccos argument to valid domain ---
+# 	arccos_arg = b/(aR*ecc_fac)
+# 	arccos_arg_nom = np.clip(unp.nominal_values(arccos_arg), -1.0, 1.0)
+# 	arccos_arg_std = unp.std_devs(arccos_arg)
+# 	arccos_arg = unp.uarray(arccos_arg_nom, arccos_arg_std)
+
+# 	inc     = unp.arccos(arccos_arg)
+# 	sini    = unp.sin(inc)
+
+# 	# --- floor sini away from zero to avoid division by zero below ---
+# 	sini_nom = np.clip(unp.nominal_values(sini), 1e-6, None)
+# 	sini_std = unp.std_devs(sini)
+# 	sini = unp.uarray(sini_nom, sini_std)
+
+# 	numer   = (1+rp)**2 - b**2
+# 	numer   = np.where(numer < 0,np.nan, numer) + 0
+
+# 	# --- compute arcsin argument ---
+# 	arg = unp.sqrt(numer) / (aR * ecc_fac * sini)
+# 	# --- clip arcsin argument to valid domain ---
+# 	arg_nom = np.clip(unp.nominal_values(arg), -1.0, 1.0)
+# 	arg_std = unp.std_devs(arg)
+# 	arg = unp.uarray(arg_nom, arg_std)
+
+# 	# --- clip sqrt(1-e**2) argument to valid domain ---
+# 	one_minus_e2 = 1 - e**2
+# 	e2_nom = np.clip(unp.nominal_values(one_minus_e2), 1e-6, None)   # floor above zero
+# 	e2_std = unp.std_devs(one_minus_e2)
+# 	one_minus_e2 = unp.uarray(e2_nom, e2_std)
+
+# 	Tdur = P/np.pi * (ecc_fac**2/(unp.sqrt(one_minus_e2))) * unp.arcsin(arg)
+
+# 	Tdur = unp.uarray(np.round(unp.nominal_values(Tdur),8), np.round(unp.std_devs(Tdur),8))
+
+# 	if np.iterable(Tdur):
+# 		return unp.nominal_values(Tdur) if all(unp.std_devs(Tdur) == np.zeros_like(Tdur)) else Tdur
+# 	else:
+# 		return unp.nominal_values(Tdur).item() if unp.std_devs(Tdur) == 0 else Tdur
 
 def ingress_duration(aR, b, Rp, P,e=0,w=90, tra_occ="tra"):
 	"""
@@ -1575,6 +1672,33 @@ def split_transits( t=None, P=None, t_ref=None, baseline_amount=0.25, input_t0s=
 	Ps      = np.concatenate(Ps)[srt_t0s]
 	plnum   = np.concatenate(plnum)[srt_t0s]
 	trnum   = np.concatenate(trnum)[srt_t0s]
+
+	# --- data-quality filter: drop T0s with too few points in their extraction window ---
+	min_pts=50
+	min_pts_window=0.05
+
+	if min_pts is not None:
+		keep = []
+		for k in range(len(t0s)):
+			if min_pts_window is not None:
+				win = min_pts_window
+			elif baseline_amount is not None:
+				win = baseline_amount*Ps[k]
+			else:
+				win = 0.1*Ps[k]
+			npts = np.sum((t >= t0s[k]-win) & (t <= t0s[k]+win))
+			if npts >= min_pts:
+				keep.append(k)
+			else:
+				print(f"split_transits(): dropping T0={t0s[k]:.4f} (planet {int(plnum[k])+1}, "
+					  f"transit #{int(trnum[k])}) — only {npts} pts within ±{win:.4f} "
+					  f"(min required: {min_pts}).")
+		t0s, Ps, plnum, trnum = t0s[keep], Ps[keep], plnum[keep], trnum[keep]
+
+		if len(t0s) == 0:
+			print("split_transits(): warning — all T0s dropped by min_pts filter.")
+			return SimpleNamespace(t0s=[], t0_list=[], plnum=[], trnum=[], plnum_list=[], P_list=[],
+									n_chunks=0, tr_times=[], fluxes=[], tr_edges=[], indices=[])
 
 	#split data into individual/planet group transits. taking points around each tmid    
 	i=0

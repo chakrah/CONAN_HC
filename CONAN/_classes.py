@@ -3069,9 +3069,10 @@ class load_lightcurves:
                     else: lc_T0s.append([])
                 self._ttvs.conf.append(split_transits(t=t, P=Ps, input_t0s=lc_T0s,flux=f, baseline_amount=None, 
                                                         show_plot=show_plot))     #returns
-            else:   #get all T0s in the LC
+            else:   #get all T0s in the LC                    
                 self._ttvs.conf.append(split_transits(t=t, P=Ps, t_ref= T0s,flux=f, baseline_amount=baseline_amount, 
-                                                        show_plot=show_plot))   
+                                                        show_plot=show_plot)) 
+                
             self._ttvs.conf[i].lcname = [nm]*len(self._ttvs.conf[i].t0s)
             self._ttvs.fit_t0s.extend(self._ttvs.conf[i].t0s)
             self._ttvs.pl_num.extend(self._ttvs.conf[i].plnum)
