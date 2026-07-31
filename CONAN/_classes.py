@@ -6393,11 +6393,24 @@ class load_result:
             lc_ind   = [int(k.split(f"-T0_pl{n}")[0].split("lc")[-1])-1 for k in T0_labels] # get the index of the lc data for the transit times of planet n
             edges    = []
             lc_names = []
+                        
             for i in range(len(self._ttvs)):
                 if i in lc_ind:
-                    pl_ind = np.array(self._ttvs[i].plnum)==(n-1)  # get indices of edges for planet n in this lc
-                    edges += list(np.array(self._ttvs[i].tr_edges)[pl_ind])
+                    # expand chunk-level tr_edges to one entry per transit, matching plnum/t0s granularity
+                    plnum_list  = self._ttvs[i].plnum_list      # per-chunk grouping
+                    chunk_edges = self._ttvs[i].tr_edges         # per-chunk edges
+                    expanded_edges = np.array(
+                        [edge for edge, grp in zip(chunk_edges, plnum_list) for _ in range(len(grp))],
+                        dtype=object
+                    )
+
+                    pl_ind = np.array(self._ttvs[i].plnum)==(n-1)
+                    edges += list(expanded_edges[pl_ind])
                     lc_names.extend([self.lc.names[i]]*len(np.array(self._ttvs[i].t0s)[pl_ind]))
+                    
+                    # pl_ind = np.array(self._ttvs[i].plnum)==(n-1)  # get indices of edges for planet n in this lc
+                    # edges += list(np.array(self._ttvs[i].tr_edges)[pl_ind])
+                    # lc_names.extend([self.lc.names[i]]*len(np.array(self._ttvs[i].t0s)[pl_ind]))
 
             if sort_lcs:   #sort the lc data by the linear ephemeris
                 srt_t0s  = np.argsort(lin_t0s)
